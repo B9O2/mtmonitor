@@ -50,13 +50,22 @@ export interface LogEntry {
   [key: string]: unknown; // 允许其他可能的字段，但避免使用 any
 }
 
-// 简化的WebSocket消息接口
-export interface WebSocketMessage {
-  data: any;
+// WebSocket消息接口定义
+interface WebSocketMetricsMessage {
+  data: Metrics;
   name: string;
-  type: string;
+  type: 'metrics';
 }
 
+interface WebSocketEventsMessage {
+  data: {
+    logs: string[];
+  };
+  name: string;
+  type: 'events';
+}
+
+export type WebSocketMessage = WebSocketMetricsMessage | WebSocketEventsMessage;
 
 // 添加到现有类型定义中
 
