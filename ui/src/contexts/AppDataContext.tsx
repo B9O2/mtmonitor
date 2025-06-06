@@ -220,7 +220,7 @@ useEffect(() => {
               if (
                 typeof parsed === 'object' && 
                 parsed !== null && 
-                'timestamp' in parsed && 
+                'time' in parsed && 
                 'level' in parsed && 
                 'message' in parsed
               ) {
@@ -229,7 +229,7 @@ useEffect(() => {
               console.warn('Invalid log entry format:', parsed);
               // 返回一个有效的默认日志条目
               return {
-                timestamp: new Date().toISOString(),
+                time: new Date().toISOString(),
                 level: LogLevel.WARN,
                 message: 'Invalid log format',
                 context: { original: log }
@@ -237,7 +237,7 @@ useEffect(() => {
             } catch (parseError) {
               console.error('JSON解析失败:', parseError);
               return {
-                timestamp: new Date().toISOString(),
+                time: new Date().toISOString(),
                 level: LogLevel.ERROR,
                 message: 'Log parsing failed',
                 context: { original: log }

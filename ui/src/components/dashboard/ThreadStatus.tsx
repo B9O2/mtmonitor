@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Metrics } from '../../types';
-import { ParseIntervalToMs } from '../../utils/time';
 
 interface ThreadStatusProps {
   metrics: Metrics | null;

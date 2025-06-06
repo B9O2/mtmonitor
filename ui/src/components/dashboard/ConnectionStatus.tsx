@@ -2,32 +2,16 @@ import React from 'react';
 
 interface ConnectionStatusProps {
   isConnected: boolean;
-  isReconnecting: boolean;
 }
 
-const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ isConnected, isReconnecting }) => {
+const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ isConnected }) => {
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/60 rounded-lg">
-      <div className={`w-3 h-3 rounded-full ${
-        isConnected 
-          ? 'bg-green-500' 
-          : isReconnecting 
-            ? 'bg-yellow-500 animate-pulse' 
-            : 'bg-red-500'
-      }`}></div>
-      <span className={`text-sm ${
-        isConnected 
-          ? 'text-green-400' 
-          : isReconnecting 
-            ? 'text-yellow-400' 
-            : 'text-red-400'
-      }`}>
-        {isConnected 
-          ? 'WebSocket 已连接' 
-          : isReconnecting 
-            ? '正在重新连接...' 
-            : 'WebSocket 未连接'}
-      </span>
+    <div className={`
+      px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-300
+      ${isConnected ? 'bg-emerald-500/90 text-emerald-950' : 'bg-rose-500/90 text-rose-950'}
+      ${isConnected ? 'animate-breath' : ''} 
+    `}>
+      {isConnected ? '已连接' : '未连接'}
     </div>
   );
 };

@@ -4,7 +4,6 @@ import { useWebSocket } from '../hooks/useWebSocket';
 
 interface WebSocketContextType {
   isConnected: boolean;
-  isReconnecting?: boolean; // 设为可选属性
   message: unknown;
   sendMessage: (data: unknown) => boolean;
 }
@@ -16,11 +15,10 @@ export const WebSocketProvider: React.FC<{children: ReactNode}> = ({ children })
   const wsData = useWebSocket(`ws://${window.location.hostname}:9783/ws`);
 
   // 使用同一个接口类型进行断言
-  const { isConnected, message, sendMessage, isReconnecting = false } = wsData as WebSocketContextType;
+  const { isConnected, message, sendMessage} = wsData as WebSocketContextType;
 
   const contextValue: WebSocketContextType = {
     isConnected,
-    isReconnecting,
     message,
     sendMessage,
   };

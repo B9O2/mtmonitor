@@ -19,7 +19,7 @@ import HealthIssuePanel from './HealthIssuePanel';
 const Dashboard: React.FC = () => {
   // 从URL参数获取核心名称
   const { coreName } = useParams<{ coreName: string }>();
-  const { isConnected, isReconnecting } = useWebSocketContext();
+  const { isConnected } = useWebSocketContext();
   const { getMetricsForCore, getLogsForCore, setSelectedCore, getCoreInterval } = useAppData();
   
   // 组件本地状态
@@ -94,7 +94,7 @@ const Dashboard: React.FC = () => {
             Multitasking {coreName}
           </h1>
         </div>
-        <ConnectionStatus isConnected={isConnected} isReconnecting={isReconnecting} />
+        <ConnectionStatus isConnected={isConnected} />
       </header>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

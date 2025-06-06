@@ -210,6 +210,7 @@ func (mws *MonitorWebServer) AddCore(name string, host string, port int, interva
 						if metrics == nil {
 							fmt.Printf("Core %s metrics channel closed\n", name)
 							loop = false
+							break
 						}
 
 						mws.Broadcast(name, "metrics", metrics)
@@ -217,6 +218,7 @@ func (mws *MonitorWebServer) AddCore(name string, host string, port int, interva
 						if events == nil {
 							fmt.Printf("Core %s events channel closed\n", name)
 							loop = false
+							break
 						}
 
 						mws.Broadcast(name, "events", events)

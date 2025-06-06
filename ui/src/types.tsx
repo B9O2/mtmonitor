@@ -42,7 +42,7 @@ export enum LogLevel {
 
 // 日志条目接口
 export interface LogEntry {
-  timestamp: string;
+  time: string;
   level: LogLevel;
   thread_id?: number;
   message: string;

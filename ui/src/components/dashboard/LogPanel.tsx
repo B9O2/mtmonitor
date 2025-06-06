@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { LogEntry, LogLevel } from '../../types';
+import { LogEntry } from '../../types';
 
 interface LogPanelProps {
   logs: LogEntry[];

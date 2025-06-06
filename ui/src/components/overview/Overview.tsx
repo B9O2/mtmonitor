@@ -41,7 +41,7 @@ const CoresList: React.FC<{
 
 const Overview: React.FC = () => {
   // 从全局上下文获取数据
-  const { isConnected, isReconnecting } = useWebSocketContext();
+  const { isConnected } = useWebSocketContext();
   const { 
     cores, 
     loading, 
@@ -142,9 +142,9 @@ const Overview: React.FC = () => {
           Multitasking 核心管理
         </h1>
         <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : isReconnecting ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
-          <span className={`text-sm ${isConnected ? 'text-green-400' : isReconnecting ? 'text-yellow-400' : 'text-red-400'}`}>
-            {isConnected ? '已连接' : isReconnecting ? '重连中...' : '未连接'}
+          <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          <span className={`text-sm ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+            {isConnected ? '已连接'  : '未连接'}
           </span>
           <button 
             onClick={() => setShowAddModal(true)}
