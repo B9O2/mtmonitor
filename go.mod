@@ -6,7 +6,7 @@ require (
 	github.com/B9O2/Multitasking v0.6.9 // indirect
 	github.com/B9O2/NStruct v0.0.5 // indirect
 	github.com/B9O2/canvas v0.0.3 // indirect
-	github.com/B9O2/tabby v0.0.7 // indirect
+	github.com/B9O2/tabby v0.0.9 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bytedance/sonic v1.13.2 // indirect
