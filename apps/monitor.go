@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/B9O2/mtmonitor/core"
+	"github.com/B9O2/mtmonitor/runtime"
 
 	"github.com/B9O2/Multitasking"
 	"github.com/B9O2/Multitasking/monitor"
@@ -20,15 +21,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type MainApp struct {
+type MonitorApp struct {
 	*tabby.BaseApplication
 }
 
-func (ba *MainApp) Detail() (string, string) {
+func (ba *MonitorApp) Detail() (string, string) {
 	return "monitor", "monitor mode"
 }
 
-func (ba *MainApp) Main(
+func (ba *MonitorApp) Main(
 	args tabby.Arguments,
 ) (*tabby.TabbyContainer, error) {
 	addr := args.Get("addr").(string)
@@ -148,7 +149,10 @@ func (ba *MainApp) Main(
 				break
 			}
 			//fmt.Println("Reading...")
-			metrics := core.NewMetrics(s, lastMetrics, interval)
+			metrics := core.NewMetrics(s, lastMetrics, interval, runtime.HealthCheckConfig{
+				MaxWorkingIntervalTimes: 3,
+				MinUsageRate:            0.1,
+			})
 			lastMetrics = metrics
 
 			//fmt.Print(metrics, "\n\n")
@@ -182,8 +186,8 @@ func (ba *MainApp) Main(
 	return nil, nil
 }
 
-func NewMainApp(apps ...tabby.Application) *MainApp {
-	ba := &MainApp{
+func NewMonitorApp(apps ...tabby.Application) *MonitorApp {
+	ba := &MonitorApp{
 		tabby.NewBaseApplication(false, apps),
 	}
 	ba.SetParam("addr", "address", tabby.String(nil), "a")

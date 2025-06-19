@@ -1,3 +1,6 @@
 MTMonitor
 config.toml
 go.work*
+.zed/*
+bake_bin/*
+.DS_Store

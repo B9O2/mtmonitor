@@ -131,7 +131,7 @@ const ThreadWorkloadChart: React.FC<ThreadWorkloadChartProps> = ({ metrics }) =>
               <YAxis stroke="#94a3b8" />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '0.375rem' }}
-                formatter={(value, name, props) => {
+                formatter={(value, _, props) => {
                   return [`任务数: ${value}`, `状态: ${props.payload.status === 1 ? '工作中' : '空闲'}`];
                 }}
               />

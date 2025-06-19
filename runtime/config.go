@@ -12,12 +12,18 @@ type CredentialConfig struct {
 	Path string `toml:"path"`
 }
 
+type HealthCheckConfig struct {
+	MaxWorkingIntervalTimes uint	`toml:"max_working_interval_times"`
+	MinUsageRate           float32 `toml:"min_usage_rate"`
+}
+
 // 核心配置
 type CoreConfig struct {
 	Host       string `toml:"host"`
 	Port       int    `toml:"port"`
 	Interval   string `toml:"interval"`
 	Credential string `toml:"credential"`
+	HealthCheck HealthCheckConfig `toml:"health_check"`
 }
 
 // 配置结构

@@ -1,16 +1,51 @@
 package web
 
 import (
+	"fmt"
+	"io"
+	"io/fs"
 	"net/http"
-	"time"
 
+	"github.com/B9O2/mtmonitor/runtime"
 	"github.com/gin-gonic/gin"
 )
 
-func (mws *MonitorWebServer) SetRoutes() {
-	// 首页重定向到UI
+func (mws *MonitorWebServer) SetRoutes(subFS fs.FS) {
+	fmt.Println("文件系统内容:")
+	err := fs.WalkDir(subFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		fmt.Println("- 发现文件:", path)
+		return nil
+	})
+	if err != nil {
+		fmt.Println("遍历文件系统错误:", err)
+	}
+
+	// 检查是否为静态资源
+	mws.render.GET("/assets/*filepath", func(c *gin.Context) {
+		c.FileFromFS(c.Request.URL.Path, http.FS(subFS))
+	})
+
 	mws.render.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/ui")
+
+		// 其他所有路由返回index.html
+		indexFile, err := subFS.Open("index.html")
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "无法加载前端页面" + err.Error()})
+			return
+		}
+		defer indexFile.Close()
+
+		content, err := io.ReadAll(indexFile)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "读取前端页面失败"})
+			return
+		}
+
+		c.Data(http.StatusOK, "text/html; charset=utf-8", content)
 	})
 
 	// WebSocket端点
@@ -36,7 +71,7 @@ func (mws *MonitorWebServer) setApiRoutes() {
 					"name":     name,
 					"host":     core.Host,
 					"port":     core.Port,
-					"interval": core.Interval.String(),
+					"interval": core.Interval,
 				})
 				return true
 			})
@@ -58,7 +93,7 @@ func (mws *MonitorWebServer) setApiRoutes() {
 				"name":     name,
 				"host":     core.Host,
 				"port":     core.Port,
-				"interval": core.Interval.String(),
+				"interval": core.Interval,
 			})
 		})
 
@@ -77,13 +112,12 @@ func (mws *MonitorWebServer) setApiRoutes() {
 				return
 			}
 
-			interval, err := time.ParseDuration(req.Interval)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "无效的时间间隔格式"})
-				return
-			}
-
-			err = mws.AddCore(req.Name, req.Host, req.Port, interval, req.CredName)
+			err := mws.AddCore(req.Name, runtime.CoreConfig{
+				Host:       req.Host,
+				Port:       req.Port,
+				Interval:   req.Interval,
+				Credential: req.CredName,
+			})
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return

@@ -6,17 +6,49 @@ import (
 	"time"
 
 	"github.com/B9O2/Multitasking/monitor"
+	"github.com/B9O2/mtmonitor/runtime"
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 )
 
+type HealthIssues []HealthIssue
+
+func (hi *HealthIssues) ThreadBlockingIssue(threadID int, description string) {
+	*hi = append(*hi, HealthIssue{
+		Type:        "thread-blocking",
+		Title:       "线程阻塞",
+		Description: description,
+		ThreadID:    threadID,
+		Alert:       false,
+	})
+
+}
+
+func (hi *HealthIssues) Append(title string, description string, alert bool) {
+	*hi = append(*hi, HealthIssue{
+		Type:        "core-health-issue",
+		Title:       title,
+		Description: description,
+		ThreadID:    -1,
+		Alert:       alert,
+	})
+}
+
+type HealthIssue struct {
+	Type        string `json:"type"` //
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Alert       bool   `json:"alert"`
+	ThreadID    int    `json:"thread_id"` // 相关线程ID
+}
+
 type Metrics struct {
 	*monitor.Status
-	Speed               float64 `json:"speed"`
-	Idle                uint64  `json:"idle"`
-	Working             uint64  `json:"working"`
-	ThreadsWorkingTimes []uint  `json:"threads_working_times"`
-	Interval            string  `json:"interval"`
+	Speed               float64      `json:"speed"`
+	Idle                uint64       `json:"idle"`
+	Working             uint64       `json:"working"`
+	ThreadsWorkingTimes []uint       `json:"threads_working_times"`
+	HealthIssues        HealthIssues `json:"health_issues"`
 }
 
 func (m *Metrics) ThreadsCountChart() *widgets.BarChart {
@@ -77,8 +109,9 @@ func (m *Metrics) String() string {
 	return builder.String()
 }
 
-func NewMetrics(status *monitor.Status, lastMetrics *Metrics, interval time.Duration) *Metrics {
+func NewMetrics(status *monitor.Status, lastMetrics *Metrics, interval time.Duration, healthCheckConfig runtime.HealthCheckConfig) *Metrics {
 	var speed float64
+	var healthIssues HealthIssues
 
 	threadsWorkingTimes := make([]uint, len(status.ThreadsDetail.ThreadsStatus))
 	if lastMetrics != nil && lastMetrics.Status != nil {
@@ -87,6 +120,12 @@ func NewMetrics(status *monitor.Status, lastMetrics *Metrics, interval time.Dura
 		for tid := range status.ThreadsDetail.ThreadsStatus {
 			if status.ThreadsDetail.ThreadsStatus[tid] == 1 && status.ThreadsDetail.ThreadsCount[tid] == lastMetrics.ThreadsDetail.ThreadsCount[tid] {
 				threadsWorkingTimes[tid] += 1
+				if threadsWorkingTimes[tid] >= healthCheckConfig.MaxWorkingIntervalTimes {
+					healthIssues.ThreadBlockingIssue(
+						tid,
+						fmt.Sprintf("Thread %d has been working for %d intervals, which exceeds the maximum allowed of %d intervals.", tid, threadsWorkingTimes[tid], healthCheckConfig.MaxWorkingIntervalTimes),
+					)
+				}
 			} else {
 				threadsWorkingTimes[tid] = 0
 			}
@@ -104,13 +143,32 @@ func NewMetrics(status *monitor.Status, lastMetrics *Metrics, interval time.Dura
 		}
 	}
 
+	if working == 0 {
+		healthIssues.Append(
+			"No Threads Working",
+			"All threads are idle, which may indicate a lack of tasks or an issue with task distribution.",
+			true,
+		)
+	} else {
+		usage := float32(working) / float32(len(status.ThreadsDetail.ThreadsStatus))
+		//fmt.Printf("Thread Usage: %.2f%%\n", usage*100)
+		if usage < healthCheckConfig.MinUsageRate {
+			healthIssues.Append(
+				"Low Thread Usage",
+				fmt.Sprintf("Only %.2f%% of threads are working, which is below the minimum usage rate of %.2f%%.", usage*100, healthCheckConfig.MinUsageRate*100),
+				false,
+			)
+		}
+	}
+
 	metrics := &Metrics{
 		Status:              status,
 		Speed:               speed,
 		Idle:                idle,
 		Working:             working,
 		ThreadsWorkingTimes: threadsWorkingTimes,
-		Interval:            interval.String(),
+
+		HealthIssues: healthIssues,
 	}
 	return metrics
 }

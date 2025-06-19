@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"slices"
 	"strings"
@@ -25,11 +26,10 @@ import (
 )
 
 type MTCore struct {
-	Host     string
-	Port     int
-	Interval time.Duration
-	Context  context.Context
-	Cancel   context.CancelFunc
+	*runtime.CoreConfig
+	Context          context.Context
+	Cancel           context.CancelFunc
+	IntervalDuration time.Duration
 }
 
 func (m *MTCore) Address() string {
@@ -56,7 +56,7 @@ func NewCredentials(cfg map[string]runtime.CredentialConfig) []*Credential {
 	return credentials
 }
 
-func HandleCore(mtCore *MTCore, interval time.Duration, certPath string) (chan *core.Metrics, chan *monitor.Events, error) {
+func HandleCore(mtCore *MTCore, certPath string) (chan *core.Metrics, chan *monitor.Events, error) {
 	var creds credentials.TransportCredentials
 	var err error
 	var opts []grpc.DialOption
@@ -80,14 +80,14 @@ func HandleCore(mtCore *MTCore, interval time.Duration, certPath string) (chan *
 	}
 
 	// 获取状态流
-	statusStream, err := mc.StreamStatus(context.Background(), interval)
+	statusStream, err := mc.StreamStatus(context.Background(), mtCore.IntervalDuration)
 	if err != nil {
 		mc.Close()
 		return nil, nil, err
 	}
 
 	// 获取事件流
-	eventsStream, err := mc.StreamEvents(context.Background(), interval, -1)
+	eventsStream, err := mc.StreamEvents(context.Background(), mtCore.IntervalDuration, -1)
 	if err != nil {
 		mc.Close()
 		return nil, nil, err
@@ -113,7 +113,7 @@ func HandleCore(mtCore *MTCore, interval time.Duration, certPath string) (chan *
 				}
 				break
 			}
-			metrics := core.NewMetrics(s, lastMetrics, interval)
+			metrics := core.NewMetrics(s, lastMetrics, mtCore.IntervalDuration, mtCore.HealthCheck)
 			metricsChan <- metrics
 			lastMetrics = metrics
 		}
@@ -165,26 +165,32 @@ type MonitorWebServer struct {
 	credentials []*Credential
 }
 
-func (mws *MonitorWebServer) AddCore(name string, host string, port int, interval time.Duration, credName string) error {
+func (mws *MonitorWebServer) AddCore(name string, cfg runtime.CoreConfig) error {
 	if _, ok := mws.cores.Load(name); ok {
 		return fmt.Errorf("core with name %s already exists", name)
 	}
 
 	index := slices.IndexFunc(mws.credentials, func(c *Credential) bool {
-		return c.Name == credName
+		return c.Name == cfg.Credential
 	})
 	if index == -1 {
-		return fmt.Errorf("credential with name %s does not exist", credName)
+		return fmt.Errorf("credential with name %s does not exist", cfg.Credential)
 	}
 	cred := mws.credentials[index]
 
+	interval := time.Duration(0)
+	if i, err := time.ParseDuration(cfg.Interval); err != nil {
+		return err
+	} else {
+		interval = i
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	core := &MTCore{
-		Host:     host,
-		Port:     port,
-		Interval: interval,
-		Context:  ctx,
-		Cancel:   cancel,
+		CoreConfig:       &cfg,
+		Context:          ctx,
+		Cancel:           cancel,
+		IntervalDuration: interval,
 	}
 
 	mws.cores.Store(name, core)
@@ -200,7 +206,7 @@ func (mws *MonitorWebServer) AddCore(name string, host string, port int, interva
 			default:
 			}
 			//fmt.Printf("Starting core %s at %s with interval %s\n", name, core.Address(), interval)
-			metricsChan, eventsChan, err := HandleCore(core, interval, cred.Path)
+			metricsChan, eventsChan, err := HandleCore(core, cred.Path)
 			if err == nil {
 				fmt.Println("Core", name, "is running at", core.Address())
 				loop := true
@@ -233,7 +239,7 @@ func (mws *MonitorWebServer) AddCore(name string, host string, port int, interva
 				fmt.Printf("[%s]Error handling core: %v\n", name, err)
 			}
 			//fmt.Printf("Core %s has been stopped\n", name)
-			time.Sleep(interval)
+			time.Sleep(core.IntervalDuration) // 等待下一个周期
 		}
 
 	}()
@@ -312,7 +318,7 @@ func (mws *MonitorWebServer) Start(host string, port int) error {
 	return nil
 }
 
-func NewMonitorWebServer(credentials []*Credential) *MonitorWebServer {
+func NewMonitorWebServer(credentials []*Credential, uiFiles fs.FS) *MonitorWebServer {
 	render := gin.Default()
 
 	// 启用CORS
@@ -323,9 +329,6 @@ func NewMonitorWebServer(credentials []*Credential) *MonitorWebServer {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
-
-	// 为前端提供静态文件（React构建后的文件）
-	render.StaticFS("/ui", http.Dir("./ui/build"))
 
 	server := &MonitorWebServer{
 		render:  render,
@@ -342,7 +345,7 @@ func NewMonitorWebServer(credentials []*Credential) *MonitorWebServer {
 		credentials: credentials,
 	}
 
-	server.SetRoutes()
+	server.SetRoutes(uiFiles)
 
 	return server
 }

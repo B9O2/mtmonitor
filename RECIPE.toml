@@ -1,0 +1,11 @@
+[recipes.default]
+desc = "Default Recipe"
+entrance = "."
+pairs = ["darwin/arm64"]
+output = "./bake_bin"
+
+[recipes.windows]
+desc = "For Windows"
+entrance = "."
+pairs = ["windows/386"]
+output = "./bake_bin"

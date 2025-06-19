@@ -4,6 +4,14 @@ export interface ThreadsDetail {
   threads_count: number[];  // 下划线形式与后端匹配
 }
 
+export interface HealthIssue {
+  title: string;
+  description: string;
+  alert: boolean;
+  thread_id: number;
+  type: string;
+}
+
 export interface Metrics {
   name: string;
   total_task: number;      // 下划线形式与后端匹配
@@ -15,6 +23,7 @@ export interface Metrics {
   idle: number;
   working: number;
   threads_working_times: number[]; // 下划线形式与后端匹配
+  health_issues: HealthIssue[];    // 添加健康问题数组
   interval: string;
 }
 
