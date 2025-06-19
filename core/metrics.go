@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/B9O2/Multitasking/monitor"
+	"github.com/B9O2/monitors/monitor"
 	"github.com/B9O2/mtmonitor/runtime"
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"

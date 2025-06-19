@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"github.com/B9O2/Multitasking"
-	"github.com/B9O2/Multitasking/monitor"
 	"github.com/B9O2/NStruct/Shield"
+	monitor_core "github.com/B9O2/monitors/core"
+	"github.com/B9O2/monitors/monitor"
+
 	"github.com/B9O2/mtmonitor/core"
 	"github.com/B9O2/mtmonitor/runtime"
 	"github.com/gin-contrib/cors"
@@ -74,7 +76,7 @@ func HandleCore(mtCore *MTCore, certPath string) (chan *core.Metrics, chan *moni
 
 	opts = append(opts, grpc.WithTransportCredentials(creds))
 
-	mc, err := Multitasking.NewMonitorClient(mtCore.Address(), opts...)
+	mc, err := monitor_core.NewMonitorClient(mtCore.Address(), opts...)
 	if err != nil {
 		return nil, nil, err
 	}

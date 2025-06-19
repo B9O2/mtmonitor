@@ -9,8 +9,8 @@ import (
 	"github.com/B9O2/mtmonitor/core"
 	"github.com/B9O2/mtmonitor/runtime"
 
-	"github.com/B9O2/Multitasking"
-	"github.com/B9O2/Multitasking/monitor"
+	monitor_core "github.com/B9O2/monitors/core"
+	"github.com/B9O2/monitors/monitor"
 	"github.com/B9O2/tabby"
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -57,7 +57,7 @@ func (ba *MonitorApp) Main(
 
 	opts = append(opts, grpc.WithTransportCredentials(creds))
 
-	mc, err := Multitasking.NewMonitorClient(addr, opts...)
+	mc, err := monitor_core.NewMonitorClient(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
